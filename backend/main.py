@@ -3,12 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
-from langchain_community.llms import Ollama
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.vectorstores import Pinecone as LangchainPinecone
-from langchain.chains import RetrievalQA
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+import httpx
 from pinecone import Pinecone, ServerlessSpec
+import json
 
 load_dotenv()
 
@@ -22,19 +19,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# setup pinecone
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+index_name = os.getenv("PINECONE_INDEX_NAME", "jarvis-knowledge")
 
-# use ollama for embeddings too - completely free
-embeddings = OllamaEmbeddings(model="llama2")
-
-llm = Ollama(
-    model="llama2",
-    temperature=0.7
-)
-
-vector_store = None
-qa_chain = None
+index = None
 
 class QueryRequest(BaseModel):
     query: str
@@ -42,55 +30,80 @@ class QueryRequest(BaseModel):
 class DocumentRequest(BaseModel):
     text: str
 
+async def get_ollama_embedding(text: str):
+    """Get embeddings from Ollama"""
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(
+            "http://localhost:11434/api/embeddings",
+            json={"model": "llama2", "prompt": text}
+        )
+        return response.json()["embedding"]
+
+async def get_ollama_response(prompt: str):
+    """Get response from Ollama"""
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama2",
+                "prompt": prompt,
+                "stream": False
+            }
+        )
+        return response.json()["response"]
+
 @app.on_event("startup")
 async def startup_event():
-    global vector_store, qa_chain
+    global index
     
-    index_name = os.getenv("PINECONE_INDEX_NAME", "jarvis-knowledge")
+    # create index if doesn't exist
+    existing_indexes = [idx.name for idx in pc.list_indexes()]
     
-    # create index if it doesn't exist
-    if index_name not in [idx.name for idx in pc.list_indexes()]:
+    if index_name not in existing_indexes:
         pc.create_index(
             name=index_name,
-            dimension=4096,  # ollama llama2 embeddings
+            dimension=4096,
             metric="cosine",
-            spec=ServerlessSpec(
-                cloud="aws",
-                region="us-east-1"
-            )
+            spec=ServerlessSpec(cloud="aws", region="us-east-1")
         )
     
     index = pc.Index(index_name)
-    
-    vector_store = LangchainPinecone(
-        index=index,
-        embedding=embeddings,
-        text_key="text"
-    )
-    
-    # setup qa chain with retriever
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vector_store.as_retriever(search_kwargs={"k": 3}),
-        return_source_documents=True
-    )
 
 @app.get("/")
 async def root():
-    return {"message": "Jarvis AI Assistant API", "status": "online"}
+    return {"message": "Jarvis AI Assistant", "status": "online"}
 
 @app.post("/api/chat")
 async def chat(request: QueryRequest):
     try:
-        if not qa_chain:
-            raise HTTPException(status_code=500, detail="QA chain not initialized")
+        query_embedding = await get_ollama_embedding(request.query)
         
-        result = qa_chain({"query": request.query})
+        # search similar vectors
+        results = index.query(
+            vector=query_embedding,
+            top_k=3,
+            include_metadata=True
+        )
+        
+        # build context from results
+        context = ""
+        if results.matches:
+            context = "\n".join([match.metadata.get("text", "") for match in results.matches])
+        
+        # create prompt with context
+        prompt = f"""Use the following context to answer the question. If the context doesn't contain relevant information, answer based on your general knowledge.
+
+Context: {context}
+
+Question: {request.query}
+
+Answer:"""
+        
+        response = await get_ollama_response(prompt)
         
         return {
-            "response": result["result"],
-            "sources": len(result.get("source_documents", []))
+            "response": response,
+            "sources": len(results.matches) if results.matches else 0
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -98,17 +111,19 @@ async def chat(request: QueryRequest):
 @app.post("/api/add-knowledge")
 async def add_knowledge(request: DocumentRequest):
     try:
-        if not vector_store:
-            raise HTTPException(status_code=500, detail="Vector store not initialized")
+        # split text into chunks
+        chunks = [request.text[i:i+500] for i in range(0, len(request.text), 450)]
         
-        # split into chunks
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=50
-        )
-        chunks = text_splitter.split_text(request.text)
+        vectors = []
+        for i, chunk in enumerate(chunks):
+            embedding = await get_ollama_embedding(chunk)
+            vectors.append({
+                "id": f"doc_{hash(chunk)}_{i}",
+                "values": embedding,
+                "metadata": {"text": chunk}
+            })
         
-        vector_store.add_texts(chunks)
+        index.upsert(vectors=vectors)
         
         return {
             "message": "Knowledge added successfully",
