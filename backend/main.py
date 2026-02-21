@@ -9,6 +9,17 @@ import json
 
 load_dotenv()
 
+# 🔑 FORCE LOAD ENV VARIABLES (Windows-safe)
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "jarvis-knowledge")
+
+if not PINECONE_API_KEY:
+    raise RuntimeError(
+        "❌ PINECONE_API_KEY not found.\n"
+        "Make sure your .env file is in project root and contains:\n"
+        "PINECONE_API_KEY=your_key_here"
+    )
+
 app = FastAPI(title="Jarvis AI Assistant")
 
 app.add_middleware(
@@ -19,8 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-index_name = os.getenv("PINECONE_INDEX_NAME", "jarvis-knowledge")
+pc = Pinecone(api_key=PINECONE_API_KEY)
+index_name = PINECONE_INDEX_NAME
 
 index = None
 
