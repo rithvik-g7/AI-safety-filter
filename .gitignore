@@ -65,4 +65,6 @@ __pycache__/
 .DS_Store
 .ipynb_checkpoints/touch README.md
 results/
+*.pkl# ML model weights
+*.joblib
 *.pkl
