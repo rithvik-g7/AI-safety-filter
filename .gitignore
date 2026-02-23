@@ -64,4 +64,5 @@ htmlcov/
 
 # Jupyter Notebooks
 .ipynb_checkpoints/touch README.md
+results/
 >>>>>>> main
