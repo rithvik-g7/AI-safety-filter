@@ -68,3 +68,5 @@ results/
 *.pkl# ML model weights
 *.joblib
 *.pkl
+
+*.ps1
