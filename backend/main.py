@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import httpx
 from pinecone import Pinecone, ServerlessSpec
 import json
+from backend.ai_safety import check_prompt
 
 load_dotenv()
 
@@ -87,35 +88,55 @@ async def root():
 @app.post("/api/chat")
 async def chat(request: QueryRequest):
     try:
+        # 1️⃣ Safety Check
+        safety_result = check_prompt(request.query)
+
+        if not safety_result["is_safe"]:
+            return {
+                "status": "blocked",
+                "category": safety_result["category"],
+                "confidence": safety_result["confidence"]
+            }
+
+        # 2️⃣ Generate Embedding
         query_embedding = await get_ollama_embedding(request.query)
-        
-        # search similar vectors
+
+        # 3️⃣ Search Vector DB
         results = index.query(
             vector=query_embedding,
             top_k=3,
             include_metadata=True
         )
-        
-        # build context from results
+
+        # 4️⃣ Build Context
         context = ""
         if results.matches:
-            context = "\n".join([match.metadata.get("text", "") for match in results.matches])
-        
-        # create prompt with context
-        prompt = f"""Use the following context to answer the question. If the context doesn't contain relevant information, answer based on your general knowledge.
+            context = "\n".join(
+                [match.metadata.get("text", "") for match in results.matches]
+            )
 
-Context: {context}
+        # 5️⃣ Construct Prompt
+        prompt = f"""Use the following context to answer the question.
+If the context doesn't contain relevant information, answer based on general knowledge.
 
-Question: {request.query}
+Context:
+{context}
 
-Answer:"""
-        
+Question:
+{request.query}
+
+Answer:
+"""
+
+        # 6️⃣ Generate LLM Response
         response = await get_ollama_response(prompt)
-        
+
         return {
+            "status": "allowed",
             "response": response,
             "sources": len(results.matches) if results.matches else 0
         }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

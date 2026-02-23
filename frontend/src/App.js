@@ -29,10 +29,15 @@ function App() {
       const response = await axios.post('http://localhost:8000/api/chat', {
         query: input
       });
-
-      const aiMessage = { 
-        role: 'assistant', 
-        content: response.data.response 
+      let aiContent;
+      if (response.data.status === "blocked") {
+        aiContent = `❌ This prompt was blocked.\nCategory: ${response.data.category}`;
+      } else {
+        aiContent = response.data.response;
+      }
+      const aiMessage = {
+        role: 'assistant',
+        content: aiContent
       };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {

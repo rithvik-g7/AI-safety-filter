@@ -164,3 +164,15 @@ while True:
 
     print("\nPrediction:", prediction)
     print("-" * 40)
+
+import pickle
+
+# Save model
+with open("safety_model.pkl", "wb") as f:
+    pickle.dump(model, f)
+
+# Save vectorizer
+with open("vectorizer.pkl", "wb") as f:
+    pickle.dump(vectorizer, f)
+
+print("✅ Model and vectorizer saved successfully.")
