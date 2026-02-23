@@ -1,11 +1,6 @@
-<<<<<<< HEAD
-venv/
-__pycache__/
-*.pyc
-.env
-.DS_Store
-=======
+# ==============================
 # Python
+# ==============================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -19,19 +14,35 @@ backend/venv/
 dist/
 build/
 
+# ==============================
 # Environment variables
+# ==============================
 .env
 .env.local
 *.env
 
+# ==============================
+# ML / Training Artifacts
+# ==============================
+results/
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.pkl
+
+# ==============================
 # IDE
+# ==============================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
+# ==============================
 # Node
+# ==============================
 node_modules/
 frontend/node_modules/
 npm-debug.log*
@@ -39,29 +50,42 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# ==============================
 # React build
+# ==============================
 frontend/build/
 frontend/dist/
 
+# ==============================
 # OS
+# ==============================
 .DS_Store
 Thumbs.db
 
+# ==============================
 # Logs
+# ==============================
 *.log
 logs/
 
+# ==============================
 # Database
+# ==============================
 *.db
 *.sqlite
 
-# Pinecone (if storing locally)
+# ==============================
+# Pinecone
+# ==============================
 pinecone_data/
 
+# ==============================
 # Test coverage
+# ==============================
 .coverage
 htmlcov/
 
-# Jupyter Notebooks
-.ipynb_checkpoints/touch README.md
->>>>>>> main
+# ==============================
+# Jupyter
+# ==============================
+.ipynb_checkpoints/
