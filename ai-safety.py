@@ -134,7 +134,6 @@ cm = confusion_matrix(y_test, y_pred)
 
 print("\nModel Accuracy:", accuracy)
 print("\nConfusion Matrix:\n", cm)
-
 print("\nClassification Report:\n")
 print(classification_report(y_test, y_pred))
 
