@@ -63,3 +63,6 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+.ipynb_checkpoints/touch README.md
+results/
+*.pkl
