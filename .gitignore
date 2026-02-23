@@ -64,4 +64,10 @@ htmlcov/
 
 # Jupyter Notebooks
 .ipynb_checkpoints/touch README.md
->>>>>>> main
+=========
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+>>>>>>>>> Temporary merge branch 2
