@@ -1,11 +1,11 @@
-# 🛡️ AI Safety Filter
+# AI Safety Filter
 
 An AI Safety Filter that classifies user prompts as **Safe** or **Unsafe** and, if unsafe, identifies the **specific risk category**.  
 This project uses **Machine Learning and Natural Language Processing (NLP)** to support responsible and secure AI usage.
 
 ---
 
-## 📌 Overview
+## Overview
 
 With the growing use of AI systems, prompt safety has become essential.  
 This AI Safety Filter acts as a **pre-moderation layer**, analyzing text inputs before they are processed by an AI model.
@@ -18,7 +18,7 @@ The system can be used in:
 
 ---
 
-## 🚀 Features
+## Features
 
 - Text-based safety classification  
 - Multi-class risk categorization  
@@ -29,7 +29,7 @@ The system can be used in:
 
 ---
 
-## 🧠 Machine Learning Pipeline
+## Machine Learning Pipeline
 
 1. **Text Preprocessing**
    - Lowercasing
@@ -47,7 +47,7 @@ The system can be used in:
 
 ---
 
-## 📊 Dataset
+## Dataset
 
 - RED-EVAL / REDBENCH dataset (Hugging Face)
 - Labeled prompts across multiple AI safety categories
@@ -61,12 +61,12 @@ Example categories:
 
 ---
 
-## 📈 Evaluation Metrics
+## Evaluation Metrics
 
 - Accuracy
-- Confusion Matrix
-- R² Score
-- Precision, Recall, F1-score (optional)
+- Precision
+- Recall
+- F1-score 
 
 ---
 
