@@ -70,7 +70,7 @@ Example categories:
 
 ---
 
-## 🧩 Tech Stack
+## Tech Stack
 
 - Python
 - scikit-learn
